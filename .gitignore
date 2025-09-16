@@ -1,0 +1,11 @@
+# Binaries
+*.elf
+*.uf2
+*.bin
+
+# Object files
+*.o
+
+# Build folders
+build/
+*.dSYM/
