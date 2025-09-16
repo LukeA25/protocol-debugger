@@ -1,22 +1,28 @@
 .section .text.boot
 .global _start
-_start:
-    // Set the stack pointer to top of RAM (for core 0)
-    ldr sp, =_stack_top
 
-    // Zero .bss section
+_start:
+    // Set up stack
+    ldr r0, =_stack_top
+    mov sp, r0
+
+    // Zero out .bss
     ldr r0, =_bss_start
     ldr r1, =_bss_end
-    mov r2, #0
-loop:
-    cmp r0, r1
-    ittt lt
-    strlt r2, [r0], #4
-    blt loop
+    movs r2, #0
 
-    // Call main()
+bss_clear:
+    cmp r0, r1
+    bcc store_zero
+    b jump_to_main
+
+store_zero:
+    str r2, [r0]
+    add r0, r0, #4
+    b bss_clear
+
+jump_to_main:
     bl main
 
-    // If main returns, loop forever
-hang:
-    b hang
+halt:
+    b halt
