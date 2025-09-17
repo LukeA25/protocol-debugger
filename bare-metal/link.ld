@@ -1,37 +1,14 @@
-ENTRY(_start)
-
-MEMORY
-{
-  FLASH (rx) : ORIGIN = 0x10000000, LENGTH = 2M
-  RAM   (rwx): ORIGIN = 0x20000000, LENGTH = 256K
+MEMORY {
+    /* We are loaded to the top 256 bytes of SRAM, which is above the bootrom
+       stack. Note 4 bytes occupied by checksum. */
+    SRAM(rx) : ORIGIN = 0x20040000, LENGTH = 252
 }
 
-SECTIONS
-{
-  .text : {
-    *(.text.boot)   /* startup code */
-    *(.text*)       /* all other code */
-  } > FLASH
-
-  .rodata : {
-    *(.rodata*)
-  } > FLASH
-
-  .data : {
-    _data_start = .;
-    *(.data*)
-    _data_end = .;
-  } > RAM AT > FLASH
-
-  .bss : {
-    _bss_start = .;
-    *(.bss*)
-    *(COMMON)
-    _bss_end = .;
-  } > RAM
-
-  .stack (NOLOAD) : {
-    . = ALIGN(8);
-    _stack_top = . + 0x1000;
-  } > RAM
+SECTIONS {
+    . = ORIGIN(SRAM);
+    .text : {
+        *(.vectors)
+        *(.entry)
+        *(.text)
+    } >SRAM
 }

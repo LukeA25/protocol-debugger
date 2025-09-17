@@ -2,6 +2,7 @@
 *.elf
 *.uf2
 *.bin
+*.list
 
 # Object files
 *.o

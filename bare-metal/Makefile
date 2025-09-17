@@ -1,39 +1,25 @@
-# === Config ===
-TARGET = blink
-OBJS = crt0.o main.o
+NAME    = blink
+CPU     = cortex-m0plus
+ARMGNU  = arm-none-eabi
+AFLAGS  = --warn --fatal-warnings -mcpu=$(CPU) -g
+LDFLAGS = -nostdlib
+CFLAGS  = -mcpu=$(CPU) -nostartfiles -ffreestanding -g -O0 -fpic -mthumb -c
+PICOSDK = ../external/pico-sdk
+PICOTOOL = ../external/picotool/build
 
-CFLAGS = -Wall -O2 -ffreestanding -nostdlib -mcpu=cortex-m0plus -mthumb
-LDFLAGS = -Tlink.ld -nostdlib -ffreestanding -Wl,--gc-sections
+all: $(NAME).bin
 
-PICOTOOL = ../external/picotool/build/picotool
+crt0.o: crt0.s
+	$(ARMGNU)-as $(AFLAGS) crt0.s -o crt0.o
 
-# === Default Target ===
-all: $(TARGET).uf2
+main.o: main.c
+	$(ARMGNU)-gcc $(CFLAGS) main.c -o main.o
 
-# === Compilation Rules ===
-%.o: %.c
-	arm-none-eabi-gcc $(CFLAGS) -c $< -o $@
+$(NAME).bin: link.ld crt0.o main.o
+	$(ARMGNU)-ld $(LDFLAGS) --entry 0x20040001 -T link.ld crt0.o main.o -o $(NAME).elf
+	$(ARMGNU)-objdump -D $(NAME).elf > $(NAME).list
+	$(ARMGNU)-objcopy -O binary $(NAME).elf $(NAME).bin
+	$(PICOTOOL)/picotool uf2 convert $(NAME).bin $(NAME).uf2 -o 0x20040000 --family rp2040
 
-%.o: %.S
-	arm-none-eabi-gcc $(CFLAGS) -c $< -o $@
-
-# === Link to ELF ===
-$(TARGET).elf: $(OBJS)
-	arm-none-eabi-gcc $(LDFLAGS) $(OBJS) -o $@
-
-# === Convert ELF to UF2 using picotool ===
-%.uf2: %.elf
-	@if [ ! -f $(PICOTOOL) ]; then \
-		echo "Error: picotool is not built. Please run:"; \
-		echo "  cd external/picotool && mkdir build && cd build && cmake .. && make"; \
-		exit 1; \
-	fi
-	$(PICOTOOL) uf2 convert $< $@
-
-# === Flash to Pico ===
-flash: $(TARGET).uf2
-	$(PICOTOOL) load $(TARGET).uf2 --family rp2040 --reboot
-
-# === Clean ===
-clean:
-	rm -f *.o *.elf *.uf2
+clean: 
+	rm -f *.bin *.o *.elf *.list *.uf2

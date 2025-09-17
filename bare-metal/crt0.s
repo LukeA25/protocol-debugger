@@ -1,28 +1,39 @@
-.section .text.boot
-.global _start
+;@ Copyright (c) 2023 CarlosFTM
+;@ This code is licensed under MIT license (see LICENSE.txt for details)
 
-_start:
-    // Set up stack
-    ldr r0, =_stack_top
-    mov sp, r0
+	.cpu cortex-m0plus
+	.thumb
 
-    // Zero out .bss
-    ldr r0, =_bss_start
-    ldr r1, =_bss_end
-    movs r2, #0
+/* vector table */
+	.section .vectors, "ax"
+	.align 2
+	.global _vectors
+_vectors:
+	.word 0x20001000
+	.word _reset
 
-bss_clear:
-    cmp r0, r1
-    bcc store_zero
-    b jump_to_main
+/* reset handler */
+	.thumb_func
+	.global _reset
+_reset:
+	ldr r0, =0x20001000  ;@ Stack Pointer
+	mov sp, r0
 
-store_zero:
-    str r2, [r0]
-    add r0, r0, #4
-    b bss_clear
+	ldr  r3, =0x4000f000  ;@ Resets.reset (Atomic bitmask clear)
+	movs r2, #32          ;@ IO_BANK0
+	str  r2, [r3, #0]
 
-jump_to_main:
-    bl main
+	ldr  r3, =0x400140cc  ;@IO_BANK0.GPIO25_CTRL
+	movs r2, #5           ;@Function 5 (SIO)
+	str  r2, [r3, #0]
 
-halt:
-    b halt
+	ldr  r3, =0xd0000020  ;@SIO_BASE.GPIO_OE
+	movs r2, #128         ;@GPIO25
+	lsl  r2, r2, #18
+	str  r2, [r3, #0]
+	
+    .extern main
+	b main
+	b .
+
+.align 4
