@@ -8,6 +8,7 @@
 # Object files
 *.o
 
-# Build folders
+# Build
 build/
 *.dSYM/
+/compile_commands.json
