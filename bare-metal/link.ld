@@ -1,14 +1,21 @@
 MEMORY {
-    /* We are loaded to the top 256 bytes of SRAM, which is above the bootrom
-       stack. Note 4 bytes occupied by checksum. */
-    SRAM(rx) : ORIGIN = 0x20040000, LENGTH = 252
+    FLASH(rx) : ORIGIN = 0x10000000, LENGTH = 2M
+    SRAM(rwx) : ORIGIN = 0x20000000, LENGTH = 256K
 }
 
 SECTIONS {
-    . = ORIGIN(SRAM);
     .text : {
         *(.vectors)
-        *(.entry)
-        *(.text)
-    } >SRAM
+        *(.text*)
+        *(.rodata*)
+    } > FLASH
+
+    .data : {
+        *(.data*)
+    } > SRAM AT > FLASH
+
+    .bss : {
+        *(.bss*)
+        *(COMMON)
+    } > SRAM
 }

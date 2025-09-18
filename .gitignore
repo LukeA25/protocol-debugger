@@ -3,6 +3,7 @@
 *.uf2
 *.bin
 *.list
+**/.DS_Store
 
 # Object files
 *.o
